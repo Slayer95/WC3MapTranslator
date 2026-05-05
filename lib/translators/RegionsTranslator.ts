@@ -75,7 +75,7 @@ export abstract class RegionsTranslator {
     }
 
     public static warToJson(buffer: Buffer): JsonResult<Region[]> {
-        const result = [];
+        const result: Region[] = [];
         const outBufferToJSON = new W3Buffer(buffer);
 
         const fileVersion = outBufferToJSON.readInt(), // File version

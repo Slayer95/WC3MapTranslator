@@ -141,7 +141,7 @@ export abstract class SoundsTranslator {
     }
 
     public static warToJson(buffer: Buffer): JsonResult<Sound[]> {
-        const result = [];
+        const result: Sound[] = [];
         const outBufferToJSON = new W3Buffer(buffer);
 
         const fileVersion = outBufferToJSON.readInt(), // File version

@@ -183,7 +183,7 @@ export abstract class ObjectsTranslator {
             const numTableModifications = outBufferToJSON.readInt();
 
             for (let i = 0; i < numTableModifications; i++) {
-                const objectDefinition = []; // object definition will store one or more modification objects
+                const objectDefinition: Modification[] = []; // object definition will store one or more modification objects
 
                 const originalId = outBufferToJSON.readChars(4),
                     customId = outBufferToJSON.readChars(4),

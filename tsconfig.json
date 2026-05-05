@@ -17,6 +17,12 @@
         "tsBuildInfoFile": "./.tsbuildinfo",
         "esModuleInterop": true,
         "noEmit": false,
+        "noImplicitAny": false,
+        "strictNullChecks": false,
+        "lib": [
+            "ES2021",
+            "ESNext.Intl"
+        ]
     },
     "exclude": [],
     "include": [
