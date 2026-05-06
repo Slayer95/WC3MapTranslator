@@ -97,6 +97,8 @@ interface Info {
     water: number[]; // R G B A
     players: Player[];
     forces: Force[];
+    randomUnits: any[];
+    randomItems: any[];
 }
 
 interface PlayerStartingPosition {
@@ -300,7 +302,20 @@ export abstract class InfoTranslator {
         outBufferToWar.addInt(0);
 
         // Unit table (random) - unsupported
-        outBufferToWar.addInt(0);
+        outBufferToWar.addInt(infoJson.randomUnits.length);
+        for (const randomUnitsGroup of infoJson.randomUnits) {
+            outBufferToWar.addInt(randomUnitsGroup.id);
+            outBufferToWar.addString(randomUnitsGroup.name);
+            outBufferToWar.addInt(randomUnitsGroup.subTables.length);
+            for (let i = 0; i < randomUnitsGroup.subTables.length; i++) outBufferToWar.addInt(0); // ????
+            outBufferToWar.addInt(randomUnitsGroup.subTables.length);
+            for (let i = 0; i < randomUnitsGroup.subTables.length; i++) {
+                outBufferToWar.addFourCCTwice(randomUnitsGroup.subTables[i].variants.length);
+                for (let j = 0; j < randomUnitsGroup.subTables[i].variants.length; j++) {
+                    outBufferToWar.addChars(randomUnitsGroup.subTables[i].variants[j].object);
+                }
+            }
+        }
 
         // Item table (random) - unsupported
         outBufferToWar.addInt(0);
@@ -366,6 +381,10 @@ export abstract class InfoTranslator {
             }, players: [
 
             ], forces: [
+
+            ], randomUnits: [
+
+            ], randomItems: [
 
             ],
             saves: 0,
@@ -530,6 +549,7 @@ export abstract class InfoTranslator {
 
         // UNSUPPORTED: Struct: upgrade avail.
         const numUpgrades = outBufferToJSON.readInt();
+        if (numUpgrades !== 0) throw new Error(`Custom upgrades unsupported`);
         for (let i = 0; i < numUpgrades; i++) {
             outBufferToJSON.readInt(); // Player Flags (bit "x"=1 if this change applies for player "x")
             outBufferToJSON.readChars(4); // upgrade id (as in UpgradeData.slk)
@@ -539,42 +559,68 @@ export abstract class InfoTranslator {
 
         // UNSUPPORTED: Struct: tech avail.
         const numTech = outBufferToJSON.readInt();
+        if (numTech !== 0) throw new Error(`Custom tech tree unsupported`);
         for (let i = 0; i < numTech; i++) {
             outBufferToJSON.readInt(); // Player Flags (bit "x"=1 if this change applies for player "x")
             outBufferToJSON.readChars(4); // tech id (this can be an item, unit or ability)
         }
 
-        // UNSUPPORTED: Struct: random unit table
-        const numUnitTable = outBufferToJSON.readInt();
+        // PARTIAL SUPPORT: Struct: random unit table
+        let numUnitTable = outBufferToJSON.readInt();
+        let randomUnits = result.randomUnits;
         for (let i = 0; i < numUnitTable; i++) {
-            outBufferToJSON.readInt(); // Group number
-            outBufferToJSON.readString(); // Group name
+            let randomUnitsGroup = {
+                id: outBufferToJSON.readInt(), // Group number
+                name: outBufferToJSON.readString(), // Group name
+                subTables: [],
+            };
+            randomUnits.push(randomUnitsGroup);
 
-            const numPositions = outBufferToJSON.readInt(); // Number "m" of positions
+            let numPositions = outBufferToJSON.readInt(); // Number "m" of positions
+            for (let n = 0; n < numPositions; n++) if (outBufferToJSON.readInt() !== 0) throw new Error(`Invalid random units spec`); // ?????
+            let numPositions2 = outBufferToJSON.readInt();
+            if (numPositions !== numPositions2) throw new Error(`Invalid random units spec`);
+
             for (let j = 0; j < numPositions; j++) {
-                outBufferToJSON.readInt(); // unit table (=0), a building table (=1) or an item table (=2)
+                let thisTable = {
+                    //type: outBufferToJSON.readInt(), // unit table (=0), a building table (=1) or an item table (=2)
+                    variants: [],
+                };
+                randomUnitsGroup.subTables.push(thisTable);
 
-                const numLinesInTable = outBufferToJSON.readInt();
+                let numLinesInTable = outBufferToJSON.readFourCCTwice();
                 for (let k = 0; k < numLinesInTable; k++) {
-                    outBufferToJSON.readInt(); // Chance of the unit/item (percentage)
-                    outBufferToJSON.readChars(4); // unit/item id's for this line specified
+                    thisTable.variants.push({
+                        //chance: outBufferToJSON.readInt(), // Chance of the unit/item (percentage)
+                        object: outBufferToJSON.readFourCC(), // unit/item id's for this line specified
+                    });
                 }
             }
         }
 
         // UNSUPPORTED: Struct: random item table
         const numItemTable = outBufferToJSON.readInt();
+        if (numItemTable !== 0) throw new Error(`Custom random item table unsupported`);
+        let randomItems = result.randomItems;
         for (let i = 0; i < numItemTable; i++) {
-            outBufferToJSON.readInt(); // Table number
-            outBufferToJSON.readString(); // Table name
+            let randomItemsGroup = {
+                id: outBufferToJSON.readInt(), // Table number
+                name: outBufferToJSON.readString(), // Table name
+                subTables: [],
+            };
+            randomItems.push(randomItemsGroup);
 
-            const itemSetsCurrentTable = outBufferToJSON.readInt(); // Number "m" of item sets on the current item table
+            let itemSetsCurrentTable = outBufferToJSON.readInt(); // Number "m" of item sets on the current item table
             for (let j = 0; j < itemSetsCurrentTable; j++) {
+                let thisTable = [];
+                randomItemsGroup.subTables.push(thisTable);
 
-                const itemsInItemSet = outBufferToJSON.readInt(); // Number "i" of items on the current item set
+                let itemsInItemSet = outBufferToJSON.readInt(); // Number "i" of items on the current item set
                 for (let k = 0; k < itemsInItemSet; k++) {
-                    outBufferToJSON.readInt(); // Percentual chance
-                    outBufferToJSON.readChars(4); // Item id (as in ItemData.slk)
+                    thisTable.push({
+                        chance: outBufferToJSON.readInt(), // Percentual chance
+                        object: outBufferToJSON.readFourCC(), // Item id (as in ItemData.slk)
+                    });
                 }
 
             }
