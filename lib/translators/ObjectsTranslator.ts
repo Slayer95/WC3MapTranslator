@@ -45,6 +45,7 @@ interface Modification {
     level?: number;
     column?: number;
     variation?: number;
+    trailing?: number;
 }
 
 interface ObjectModificationTable {
@@ -140,8 +141,9 @@ export abstract class ObjectsTranslator {
                         outBufferToWar.addString(mod.value);
                     }
 
-                    // End of struct
-                    if (tableType === TableType.original) {
+                    if (mod.trailing != null) {
+                        outBufferToWar.addInt(mod.trailing);
+                    } else if (tableType === TableType.original) {
                         // Original objects are ended with their base id (e.g. hfoo)
                         outBufferToWar.addChars(defKey);
                     } else {
@@ -185,8 +187,8 @@ export abstract class ObjectsTranslator {
             for (let i = 0; i < numTableModifications; i++) {
                 const objectDefinition: Modification[] = []; // object definition will store one or more modification objects
 
-                const originalId = outBufferToJSON.readChars(4),
-                    customId = outBufferToJSON.readChars(4),
+                const originalId = outBufferToJSON.readFourCC(),
+                    customId = outBufferToJSON.readFourCC(),
                     modificationCount = outBufferToJSON.readInt();
 
                 for (let j = 0; j < modificationCount; j++) {
@@ -198,7 +200,7 @@ export abstract class ObjectsTranslator {
                         value: {}
                     };
 
-                    modification.id = outBufferToJSON.readChars(4);
+                    modification.id = outBufferToJSON.readFourCC();
                     modification.type = this.varTypes[outBufferToJSON.readInt()]; // 'int' | 'real' | 'unreal' | 'string',
 
                     if (type === ObjectType.Doodads || type === ObjectType.Abilities || type === ObjectType.Upgrades) {
@@ -211,15 +213,10 @@ export abstract class ObjectsTranslator {
                     } else if (modification.type === 'real' || modification.type === 'unreal') {
                         modification.value = outBufferToJSON.readFloat();
                     } else { // modification.type === 'string'
-                        modification.value = outBufferToJSON.readString();
+                        modification.value = outBufferToJSON.readString('utf8');
                     }
 
-                    if (isOriginalTable) {
-                        outBufferToJSON.readInt(); // should be 0 for original objects
-                    } else {
-                        outBufferToJSON.readChars(4); // should be object ID for custom objects
-                    }
-
+                    modification.trailing = outBufferToJSON.readInt();
                     objectDefinition.push(modification);
                 }
 

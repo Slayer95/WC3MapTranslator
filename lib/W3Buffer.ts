@@ -27,21 +27,14 @@ export class W3Buffer {
         return roundTo(float, 3);
     }
 
-    public readString(): string {
-        const string = [];
-
-        while (this._buffer[this._offset] !== 0x00) {
-            string.push(this._buffer[this._offset]);
-            this._offset += 1;
-        }
-        this._offset += 1; // consume the \0 end-of-string delimiter
-
-        return string.map((ch) => {
-            return String.fromCharCode(ch);
-        }).join('');
+    public readString(encoding: string = 'latin1'): string {
+        const nullTerminatorIndex = this._buffer.indexOf(0, this._offset);
+        const stringBytes = this._buffer.slice(this._offset, nullTerminatorIndex);
+        this._offset = nullTerminatorIndex + 1;
+        return stringBytes.toString(encoding);
     }
 
-    public readChars(len: number = 1): string {
+    public readChars(len: number = 1, escapeNull: boolean = null): string {
         const string = [];
         const numCharsToRead = len || 1;
 
@@ -51,9 +44,13 @@ export class W3Buffer {
         }
 
         return string.map((ch) => {
-            if (ch === 0x0) return '0';
+            if (escapeNull && ch === 0x0) return '0';
             return String.fromCharCode(ch);
         }).join('');
+    }
+
+    public readFourCC() {
+        return this.readChars(4, false);
     }
 
     public readByte() {
