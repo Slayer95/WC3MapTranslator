@@ -289,7 +289,7 @@ export abstract class InfoTranslator {
             if (force.flags.shareAdvUnitControl) forceFlags |= 0x0020;
 
             outBufferToWar.addInt(forceFlags);
-            outBufferToWar.addInt(force.players);
+            outBufferToWar.addInt(force.players === -1 ? (1 << 11) - 1 : force.players);
             outBufferToWar.addString(force.name);
         });
 
