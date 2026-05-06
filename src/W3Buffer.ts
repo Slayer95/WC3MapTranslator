@@ -32,7 +32,7 @@ export class W3Buffer {
         return roundTo(float, 3);
     }
 
-    public readString(encoding: string = 'latin1'): string {
+    public readString(encoding: BufferEncoding = 'latin1'): string {
         const nullTerminatorIndex = this._buffer.indexOf(0, this._offset);
         const stringBytes = this._buffer.slice(this._offset, nullTerminatorIndex);
         this._offset = nullTerminatorIndex + 1;
@@ -56,6 +56,18 @@ export class W3Buffer {
 
     public readFourCC(): string {
         return this.readChars(4, false);
+    }
+
+    public readFourCCTwice(): number {
+        let value = 0;
+        let string = this.readChars(4, false);
+        for (let i = 0; i < string.length; i++) {
+            let c = string.charCodeAt(i);
+            if (c === 0) continue;
+            if (c < 0x30 || 0x39 < c) throw new Error(`Invalid numerical FourCC`);
+            value += (c - 0x30) * (1 << (8 * i));
+        }
+        return value;
     }
 
     public readByte(): number {

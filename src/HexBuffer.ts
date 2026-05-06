@@ -76,6 +76,15 @@ export class HexBuffer {
         this._buffer.push('0x0');
     }
 
+    public addFourCCTwice(int: number) {
+        if (int >= 10) throw new Error(`idk how to encode ${int}`);
+        if (int === 0) {
+            this._buffer.push('0x0', '0x0', '0x0', '0x0');
+        } else {
+            this._buffer.push(`0x${30+int}`, '0x0', '0x0', '0x0');
+        }
+    }
+
     public getBuffer(): Buffer {
         return Buffer.from(this._buffer.map((s) => parseInt(s)));
     }
