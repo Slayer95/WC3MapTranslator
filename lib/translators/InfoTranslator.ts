@@ -238,13 +238,17 @@ export abstract class InfoTranslator {
 
         // Misc.
         // If globalWeather is not defined or is set to 'none', use 0 sentinel value, else add char[4]
-        if (!infoJson.globalWeather || infoJson.globalWeather.toLowerCase() === 'none') {
+        if (!infoJson.globalWeather || infoJson.globalWeather.toLowerCase() === 'none' || infoJson.globalWeather === '0000') {
             outBufferToWar.addInt(0);
         } else {
             outBufferToWar.addChars(infoJson.globalWeather); // char[4] - lookup table
         }
         outBufferToWar.addString(infoJson.customSoundEnvironment || '');
-        outBufferToWar.addChar(infoJson.customLightEnv || 'L');
+        if (infoJson.customLightEnv === '0') {
+            outBufferToWar.addByte(0);
+        } else {
+            outBufferToWar.addChar(infoJson.customLightEnv || 'L');
+        }
 
         // Custom water tinting
         outBufferToWar.addByte(infoJson.water[0]);
