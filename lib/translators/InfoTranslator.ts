@@ -611,6 +611,7 @@ export abstract class InfoTranslator {
         }
 
         // UNSUPPORTED: Struct: random item table
+        // Missing jsonToWar
         const numItemTable = outBufferToJSON.readInt();
         if (numItemTable !== 0) throw new Error(`Custom random item table unsupported`);
         let randomItems = result.randomItems;
