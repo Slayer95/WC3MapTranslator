@@ -135,7 +135,6 @@ export abstract class DoodadsTranslator {
 
             const flags: flag = outBufferToJSON.readByte();
             doodad.flags = {
-                // @ts-expect-error
                 visible: flags === 1 || flags === 2,
                 solid: flags === 2
             };

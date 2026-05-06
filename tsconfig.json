@@ -20,8 +20,7 @@
         "noImplicitAny": false,
         "strictNullChecks": false,
         "lib": [
-            "ES2021",
-            "ESNext.Intl"
+            "ES2020.Intl"
         ]
     },
     "exclude": [],
