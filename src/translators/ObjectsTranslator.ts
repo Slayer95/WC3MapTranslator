@@ -37,6 +37,7 @@ interface Modification {
     level?: number;
     column?: number;
     variation?: number;
+    trailing?: string;
 }
 
 interface ObjectDefinition {
@@ -131,8 +132,9 @@ export default abstract class ObjectsTranslator extends ITranslator {
                 buffer.addString(modification.value);
             }
 
-            // End of struct
-            if (tableType === TableType.original) {
+            if (modification.trailing != null) {
+                buffer.addChars(modification.trailing);
+            } else if (tableType === TableType.original) {
                 // Original objects are ended with their base id (e.g. hfoo)
                 buffer.addChars(objectId);
             } else {
@@ -142,6 +144,7 @@ export default abstract class ObjectsTranslator extends ITranslator {
                 buffer.addByte(0);
                 buffer.addByte(0);
             }
+            // End of struct
         };
 
         const writeObject = (object: ObjectDefinition, buffer: HexBuffer) => {
@@ -262,12 +265,12 @@ export default abstract class ObjectsTranslator extends ITranslator {
             } else if (valueType === 'real' || valueType === 'unreal') {
                 value = buffer.readFloat();
             } else { // valueType === 'string'
-                value = buffer.readString();
+                value = buffer.readString('utf8');
             }
 
             buffer.readFourCC(); // original fields end with object ID, custom fields end with (00 00 00 00)
 
-            return { id, type: valueType, level, column, value };
+            return { id, type: valueType, level, column, value, trailing: buffer.readFourCC() };
         };
 
         const readObject = (buffer: W3Buffer): ObjectDefinition => {
