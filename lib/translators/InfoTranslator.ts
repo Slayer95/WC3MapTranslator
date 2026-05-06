@@ -488,8 +488,19 @@ export abstract class InfoTranslator {
         result.water = [outBufferToJSON.readByte(), outBufferToJSON.readByte(), outBufferToJSON.readByte(), outBufferToJSON.readByte()]; // R G B A
 
         result.scriptLanguage = outBufferToJSON.readInt();
-        result.supportedModes = outBufferToJSON.readInt();
-        outBufferToJSON.readInt(); // unknown
+        if (fileVersion >= 31) {
+          result.supportedModes = outBufferToJSON.readInt();
+          outBufferToJSON.readInt(); // game data version
+        }
+
+        if (fileVersion >= 32)  {
+          outBufferToJSON.readInt(); // default zoom distance
+          outBufferToJSON.readInt(); // max zoom distance
+        }
+
+        if (fileVersion >= 33) {
+          outBufferToJSON.readInt(); // min zoom distance
+        }
 
         // Struct: players
         const numPlayers = outBufferToJSON.readInt();
@@ -566,6 +577,7 @@ export abstract class InfoTranslator {
         }
 
         // PARTIAL SUPPORT: Struct: random unit table
+        // Note. (8)wellspringtemple_s2_v1.2 fails to parse with this algorithm.
         let numUnitTable = outBufferToJSON.readInt();
         let randomUnits = result.randomUnits;
         for (let i = 0; i < numUnitTable; i++) {
